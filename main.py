@@ -10,6 +10,9 @@ from services.executor import ParallelExecutor
 from tools.bash_tool import BashTool
 from tools.agent_tool import AgentTool
 from tools.todowrite_tool import TodoWriteTool
+from tools.edit_tool import EditTool
+from tools.read_tool import ReadTool
+from tools.write_tool import WriteTool
 from utils.prompts import get_system_prompt
 
 
@@ -23,12 +26,19 @@ class ClaudeCodeCLI:
         self.bash_tool = BashTool()
         self.agent_tool = AgentTool(self.executor)
         self.todowrite_tool = TodoWriteTool()
+        self.edit_tool = EditTool()
+        self.read_tool = ReadTool()
+        self.write_tool = WriteTool()
         self.conversation_history: List[Dict[str, Any]] = []
+        self.read_file_timestamps: Dict[str, float] = {}
     
     def get_tools(self) -> List[Dict[str, Any]]:
         """Get available tools."""
         return [
             self.bash_tool.get_tool_schema(),
+            self.edit_tool.get_tool_schema(),
+            self.read_tool.get_tool_schema(),
+            self.write_tool.get_tool_schema(),
             self.todowrite_tool.get_tool_schema()
             # self.agent_tool.get_tool_schema()
         ]
@@ -41,6 +51,24 @@ class ClaudeCodeCLI:
             print(f"\nusing bash tool: {command}")
             result = await self.bash_tool.execute(**arguments)
             return self.bash_tool.format_result(result)
+        elif tool_name == "edit":
+            # Print tool execution info
+            file_path = arguments.get('file_path', '')
+            print(f"\nusing edit tool: {file_path}")
+            result = await self.edit_tool.execute(**arguments, read_file_timestamps=self.read_file_timestamps)
+            return self.edit_tool.format_result(result)
+        elif tool_name == "read":
+            # Print tool execution info
+            file_path = arguments.get('file_path', '')
+            print(f"\nusing read tool: {file_path}")
+            result = await self.read_tool.execute(**arguments, read_file_timestamps=self.read_file_timestamps)
+            return self.read_tool.format_result(result)
+        elif tool_name == "write":
+            # Print tool execution info
+            file_path = arguments.get('file_path', '')
+            print(f"\nusing write tool: {file_path}")
+            result = await self.write_tool.execute(**arguments, read_file_timestamps=self.read_file_timestamps)
+            return self.write_tool.format_result(result)
         elif tool_name == "todo_write":
             # Print tool execution info
             todo_count = len(arguments.get('todos', []))
