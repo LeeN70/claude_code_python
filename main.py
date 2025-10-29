@@ -9,6 +9,7 @@ from services.openai_client import OpenAIClient
 from services.executor import ParallelExecutor
 from tools.bash_tool import BashTool
 from tools.agent_tool import AgentTool
+from tools.todowrite_tool import TodoWriteTool
 from utils.prompts import get_system_prompt
 
 
@@ -21,13 +22,15 @@ class ClaudeCodeCLI:
         self.executor = ParallelExecutor(self.client)
         self.bash_tool = BashTool()
         self.agent_tool = AgentTool(self.executor)
+        self.todowrite_tool = TodoWriteTool()
         self.conversation_history: List[Dict[str, Any]] = []
     
     def get_tools(self) -> List[Dict[str, Any]]:
         """Get available tools."""
         return [
             self.bash_tool.get_tool_schema(),
-            self.agent_tool.get_tool_schema()
+            self.todowrite_tool.get_tool_schema()
+            # self.agent_tool.get_tool_schema()
         ]
     
     async def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
@@ -38,6 +41,12 @@ class ClaudeCodeCLI:
             print(f"\nusing bash tool: {command}")
             result = await self.bash_tool.execute(**arguments)
             return self.bash_tool.format_result(result)
+        elif tool_name == "todo_write":
+            # Print tool execution info
+            todo_count = len(arguments.get('todos', []))
+            print(f"\nusing todo_write tool: managing {todo_count} tasks")
+            result = await self.todowrite_tool.execute(**arguments)
+            return self.todowrite_tool.format_result(result)
         elif tool_name == "agent":
             # Print tool execution info
             subagent_type = arguments.get('subagent_type', 'general-purpose')
