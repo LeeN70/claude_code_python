@@ -13,6 +13,8 @@ from tools.todowrite_tool import TodoWriteTool
 from tools.edit_tool import EditTool
 from tools.read_tool import ReadTool
 from tools.write_tool import WriteTool
+from tools.glob_tool import GlobTool
+from tools.grep_tool import GrepTool
 from utils.prompts import get_system_prompt
 
 
@@ -29,6 +31,8 @@ class ClaudeCodeCLI:
         self.edit_tool = EditTool()
         self.read_tool = ReadTool()
         self.write_tool = WriteTool()
+        self.glob_tool = GlobTool()
+        self.grep_tool = GrepTool()
         self.conversation_history: List[Dict[str, Any]] = []
         self.read_file_timestamps: Dict[str, float] = {}
     
@@ -39,6 +43,8 @@ class ClaudeCodeCLI:
             self.edit_tool.get_tool_schema(),
             self.read_tool.get_tool_schema(),
             self.write_tool.get_tool_schema(),
+            self.glob_tool.get_tool_schema(),
+            self.grep_tool.get_tool_schema(),
             self.todowrite_tool.get_tool_schema()
             # self.agent_tool.get_tool_schema()
         ]
@@ -69,6 +75,18 @@ class ClaudeCodeCLI:
             print(f"\nusing write tool: {file_path}")
             result = await self.write_tool.execute(**arguments, read_file_timestamps=self.read_file_timestamps)
             return self.write_tool.format_result(result)
+        elif tool_name == "glob":
+            # Print tool execution info
+            pattern = arguments.get('pattern', '')
+            print(f"\nusing glob tool: {pattern}")
+            result = await self.glob_tool.execute(**arguments)
+            return self.glob_tool.format_result(result)
+        elif tool_name == "grep":
+            # Print tool execution info
+            pattern = arguments.get('pattern', '')
+            print(f"\nusing grep tool: {pattern}")
+            result = await self.grep_tool.execute(**arguments)
+            return self.grep_tool.format_result(result)
         elif tool_name == "todo_write":
             # Print tool execution info
             todo_count = len(arguments.get('todos', []))
