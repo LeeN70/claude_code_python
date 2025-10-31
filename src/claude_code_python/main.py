@@ -16,13 +16,23 @@ from .tools.write_tool import WriteTool
 from .tools.glob_tool import GlobTool
 from .tools.grep_tool import GrepTool
 from .utils.prompts import get_system_prompt
+from .utils.permissions import (
+    prompt_user_permission,
+    format_bash_preview,
+    format_diff_preview,
+    format_write_preview
+)
 
 
 class ClaudeCodeCLI:
     """Simple CLI for Claude Code."""
     
-    def __init__(self):
-        """Initialize CLI."""
+    def __init__(self, skip_permissions: bool = False):
+        """Initialize CLI.
+        
+        Args:
+            skip_permissions: If True, skip permission prompts for bash/edit/write tools
+        """
         self.client = OpenAIClient()
         self.executor = ParallelExecutor(self.client)
         self.bash_tool = BashTool()
@@ -35,6 +45,7 @@ class ClaudeCodeCLI:
         self.grep_tool = GrepTool()
         self.conversation_history: List[Dict[str, Any]] = []
         self.read_file_timestamps: Dict[str, float] = {}
+        self.skip_permissions = skip_permissions
     
     def get_tools(self) -> List[Dict[str, Any]]:
         """Get available tools."""
@@ -55,12 +66,39 @@ class ClaudeCodeCLI:
             # Print tool execution info
             command = arguments.get('command', '')
             print(f"\nusing bash tool: {command}")
+            
+            # Check permissions if not skipped
+            if not self.skip_permissions:
+                preview = format_bash_preview(command)
+                if not prompt_user_permission(preview, "bash"):
+                    return "Operation cancelled by user. The bash command was not executed."
+            
             result = await self.bash_tool.execute(**arguments)
             return self.bash_tool.format_result(result)
         elif tool_name == "edit":
             # Print tool execution info
             file_path = arguments.get('file_path', '')
             print(f"\nusing edit tool: {file_path}")
+            
+            # Check permissions if not skipped
+            if not self.skip_permissions:
+                success, preview_data = self.edit_tool.generate_preview(
+                    file_path=arguments.get('file_path', ''),
+                    old_string=arguments.get('old_string', ''),
+                    new_string=arguments.get('new_string', ''),
+                    read_file_timestamps=self.read_file_timestamps
+                )
+                
+                if not success:
+                    # preview_data contains error message
+                    return preview_data
+                
+                # preview_data is (diff_lines, file_path)
+                diff_lines, fp = preview_data
+                preview = format_diff_preview(diff_lines, fp, "edit")
+                if not prompt_user_permission(preview, "edit"):
+                    return "Operation cancelled by user. The file was not modified."
+            
             result = await self.edit_tool.execute(**arguments, read_file_timestamps=self.read_file_timestamps)
             return self.edit_tool.format_result(result)
         elif tool_name == "read":
@@ -73,6 +111,32 @@ class ClaudeCodeCLI:
             # Print tool execution info
             file_path = arguments.get('file_path', '')
             print(f"\nusing write tool: {file_path}")
+            
+            # Check permissions if not skipped
+            if not self.skip_permissions:
+                success, preview_data = self.write_tool.generate_preview(
+                    file_path=arguments.get('file_path', ''),
+                    content=arguments.get('content', ''),
+                    read_file_timestamps=self.read_file_timestamps
+                )
+                
+                if not success:
+                    # preview_data contains error message
+                    return preview_data
+                
+                # preview_data is (diff_lines, file_path, file_exists, content)
+                diff_lines, fp, file_exists, content = preview_data
+                
+                if file_exists and diff_lines:
+                    # Show diff for existing file
+                    preview = format_diff_preview(diff_lines, fp, "write")
+                else:
+                    # Show content preview for new file
+                    preview = format_write_preview(fp, content, file_exists)
+                
+                if not prompt_user_permission(preview, "write"):
+                    return "Operation cancelled by user. The file was not written."
+            
             result = await self.write_tool.execute(**arguments, read_file_timestamps=self.read_file_timestamps)
             return self.write_tool.format_result(result)
         elif tool_name == "glob":
@@ -92,6 +156,14 @@ class ClaudeCodeCLI:
             todo_count = len(arguments.get('todos', []))
             print(f"\nusing todo_write tool: managing {todo_count} tasks")
             result = await self.todowrite_tool.execute(**arguments)
+            
+            # Display brief task list
+            todos = result.get("todos", [])
+            if todos:
+                brief_display = self.todowrite_tool.format_brief_display(todos)
+                if brief_display:
+                    print(brief_display)
+            
             return self.todowrite_tool.format_result(result)
         elif tool_name == "agent":
             # Print tool execution info
@@ -174,6 +246,8 @@ async def main():
     parser.add_argument("query", nargs="*", help="Query to process (omit for interactive mode)")
     parser.add_argument("--model", help="OpenAI model to use", default=None)
     parser.add_argument("--parallel-agents", type=int, help="Number of parallel agents", default=1)
+    parser.add_argument("--permission-skip-mode", action="store_true", 
+                        help="Skip permission prompts for bash/edit/write tools (default: permissions enabled)")
     
     args = parser.parse_args()
     
@@ -188,8 +262,8 @@ async def main():
         print("Error: OPENAI_API_KEY environment variable not set")
         sys.exit(1)
     
-    # Initialize CLI
-    cli = ClaudeCodeCLI()
+    # Initialize CLI with permission settings
+    cli = ClaudeCodeCLI(skip_permissions=args.permission_skip_mode)
     
     # Run in appropriate mode
     if args.query:

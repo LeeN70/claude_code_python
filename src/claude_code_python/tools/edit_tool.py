@@ -137,6 +137,62 @@ class EditTool:
         return True, None
     
     @staticmethod
+    def generate_preview(
+        file_path: str,
+        old_string: str,
+        new_string: str,
+        read_file_timestamps: Dict[str, float]
+    ) -> Tuple[bool, str]:
+        """
+        Generate a preview of the edit operation.
+        
+        Args:
+            file_path: Path to the file to edit
+            old_string: Text to replace
+            new_string: Text to replace it with
+            read_file_timestamps: Dictionary of file read timestamps
+            
+        Returns:
+            Tuple of (success, preview_string_or_error)
+        """
+        # Validate input
+        is_valid, error_msg = EditTool.validate_input(
+            file_path, old_string, new_string, read_file_timestamps
+        )
+        if not is_valid:
+            return False, f"Cannot preview edit: {error_msg}"
+        
+        # Resolve full path
+        full_file_path = file_path if os.path.isabs(file_path) else os.path.join(os.getcwd(), file_path)
+        
+        # Read original file if it exists
+        original_file = ""
+        if os.path.exists(full_file_path):
+            try:
+                original_file = EditTool._read_file(full_file_path)
+            except Exception as e:
+                return False, f"Cannot read file for preview: {e}"
+        
+        # Apply the edit
+        if old_string == "":
+            # Create new file
+            updated_file = new_string
+        else:
+            # Edit existing file
+            updated_file = original_file.replace(old_string, new_string, 1)
+        
+        # Generate diff
+        diff_lines = list(difflib.unified_diff(
+            original_file.splitlines(keepends=True),
+            updated_file.splitlines(keepends=True),
+            fromfile=file_path,
+            tofile=file_path,
+            lineterm=''
+        ))
+        
+        return True, (diff_lines, file_path)
+    
+    @staticmethod
     def get_snippet(initial_text: str, old_str: str, new_str: str) -> Tuple[str, int]:
         """
         Get a snippet of the file around the change with context.

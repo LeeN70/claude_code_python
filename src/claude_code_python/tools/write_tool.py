@@ -1,7 +1,7 @@
 """File write tool for creating or overwriting files."""
 import os
 import difflib
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from pydantic import BaseModel, Field
 
 
@@ -61,6 +61,70 @@ class WriteTool:
         except UnicodeEncodeError:
             with open(file_path, 'w', encoding='latin-1') as f:
                 f.write(content)
+    
+    @staticmethod
+    def generate_preview(
+        file_path: str,
+        content: str,
+        read_file_timestamps: Dict[str, float]
+    ) -> Tuple[bool, Any]:
+        """
+        Generate a preview of the write operation.
+        
+        Args:
+            file_path: Path to the file to write
+            content: Content to write
+            read_file_timestamps: Dictionary of file read timestamps
+            
+        Returns:
+            Tuple of (success, preview_data_or_error)
+            preview_data is (diff_lines, file_path, file_exists) for success
+        """
+        # Resolve full path
+        full_file_path = file_path if os.path.isabs(file_path) else os.path.join(os.getcwd(), file_path)
+        
+        # Check if file exists
+        file_exists = os.path.exists(full_file_path)
+        
+        # Validate existing files
+        if file_exists:
+            # Check if it's a Jupyter notebook
+            if full_file_path.endswith('.ipynb'):
+                return False, "File is a Jupyter Notebook. Use a notebook edit tool instead."
+            
+            # Check if file has been read
+            read_timestamp = read_file_timestamps.get(full_file_path)
+            if not read_timestamp:
+                return False, "File has not been read yet. Read it first before writing to it."
+            
+            # Check if file was modified since read
+            try:
+                last_write_time = os.path.getmtime(full_file_path)
+                if last_write_time > read_timestamp:
+                    return False, "File has been modified since read, either by the user or by a linter. Read it again before attempting to write it."
+            except OSError as e:
+                return False, f"Cannot access file: {e}"
+        
+        # Read old content if file exists
+        old_content = ""
+        if file_exists:
+            try:
+                old_content = WriteTool._read_file(full_file_path)
+            except Exception as e:
+                return False, f"Cannot read existing file: {e}"
+        
+        # Generate diff
+        diff_lines = []
+        if file_exists and old_content:
+            diff_lines = list(difflib.unified_diff(
+                old_content.splitlines(keepends=True),
+                content.splitlines(keepends=True),
+                fromfile=file_path,
+                tofile=file_path,
+                lineterm=''
+            ))
+        
+        return True, (diff_lines, file_path, file_exists, content)
     
     @staticmethod
     async def execute(

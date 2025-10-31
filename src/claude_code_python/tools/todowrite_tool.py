@@ -215,6 +215,31 @@ When NOT to use:
         }
     
     @staticmethod
+    def format_brief_display(todos: List[Dict[str, Any]]) -> str:
+        """Format todos for brief command-line display."""
+        if not todos:
+            return ""
+        
+        lines = []
+        for todo in todos:
+            # Status icon
+            if todo["status"] == "completed":
+                icon = "☒"
+            elif todo["status"] == "in_progress":
+                icon = "▶"
+            else:
+                icon = "☐"
+            
+            # Priority text
+            priority = todo["priority"].capitalize()
+            priority_text = f"[{priority}]"
+            
+            # Format line
+            lines.append(f"  {icon} {priority_text} {todo['content']}")
+        
+        return "\n".join(lines)
+    
+    @staticmethod
     def format_result(result: Dict[str, Any]) -> str:
         """Format tool result for display."""
         if "error" in result:
@@ -235,7 +260,8 @@ When NOT to use:
                 output.append(f"\n{status_label}:")
                 for todo in status_todos:
                     icon = "☒" if status == "completed" else "☐"
-                    priority_marker = "🔴" if todo["priority"] == "high" else "🟡" if todo["priority"] == "medium" else "🟢"
+                    priority = todo["priority"].capitalize()
+                    priority_marker = f"[{priority}]"
                     output.append(f"  {icon} {priority_marker} {todo['content']}")
         
         return "\n".join(output)
