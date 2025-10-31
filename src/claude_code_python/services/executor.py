@@ -2,9 +2,9 @@
 import asyncio
 from typing import List, Dict, Any, Optional, Callable
 from dataclasses import dataclass
-from services.openai_client import OpenAIClient
-from services.agent_manager import AgentConfig
-from utils.prompts import get_system_prompt
+from .openai_client import OpenAIClient
+from .agent_manager import AgentConfig
+from ..utils.prompts import get_system_prompt
 
 
 @dataclass

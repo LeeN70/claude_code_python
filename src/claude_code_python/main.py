@@ -5,17 +5,17 @@ import sys
 import asyncio
 import argparse
 from typing import List, Dict, Any
-from services.openai_client import OpenAIClient
-from services.executor import ParallelExecutor
-from tools.bash_tool import BashTool
-from tools.agent_tool import AgentTool
-from tools.todowrite_tool import TodoWriteTool
-from tools.edit_tool import EditTool
-from tools.read_tool import ReadTool
-from tools.write_tool import WriteTool
-from tools.glob_tool import GlobTool
-from tools.grep_tool import GrepTool
-from utils.prompts import get_system_prompt
+from .services.openai_client import OpenAIClient
+from .services.executor import ParallelExecutor
+from .tools.bash_tool import BashTool
+from .tools.agent_tool import AgentTool
+from .tools.todowrite_tool import TodoWriteTool
+from .tools.edit_tool import EditTool
+from .tools.read_tool import ReadTool
+from .tools.write_tool import WriteTool
+from .tools.glob_tool import GlobTool
+from .tools.grep_tool import GrepTool
+from .utils.prompts import get_system_prompt
 
 
 class ClaudeCodeCLI:
@@ -201,6 +201,11 @@ async def main():
         await cli.interactive_mode()
 
 
-if __name__ == "__main__":
+def cli_entry():
+    """CLI entry point for console script."""
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    cli_entry()
 

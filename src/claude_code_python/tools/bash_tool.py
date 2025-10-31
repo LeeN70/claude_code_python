@@ -3,7 +3,7 @@ import subprocess
 import os
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
-from utils.validation import validate_bash_command, truncate_output
+from ..utils.validation import validate_bash_command, truncate_output
 
 
 class BashToolInput(BaseModel):

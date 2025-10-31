@@ -1,8 +1,8 @@
 """Agent orchestration tool for parallel task execution."""
 from typing import Dict, Any, Optional, List, Callable
 from pydantic import BaseModel, Field
-from services.agent_manager import load_all_agents, find_agent_by_type
-from services.executor import ParallelExecutor
+from ..services.agent_manager import load_all_agents, find_agent_by_type
+from ..services.executor import ParallelExecutor
 
 
 class AgentToolInput(BaseModel):

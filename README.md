@@ -11,11 +11,38 @@ A minimal Python implementation of Claude Code - a command-line AI coding assist
 
 ## Installation
 
+### Quick Install (Recommended)
+
+Install the package globally to use the `vibe` command from anywhere:
+
 ```bash
-# Install dependencies
+# Clone the repository
+git clone https://github.com/LeeN70/claude_code_python.git
+cd claude_code_python
+
+# Install in development mode (changes reflect immediately)
+pip install -e .
+
+# Or install normally
+pip install .
+```
+
+After installation, you can use `vibe` from any directory!
+
+### Manual Setup (Without Installation)
+
+```bash
+# Install dependencies only
 pip install -r requirements.txt
 
-# Set OpenAI API key
+# Run directly with Python
+python main.py
+```
+
+### Environment Variables
+
+```bash
+# Set OpenAI API key (required)
 export OPENAI_API_KEY="your-api-key-here"
 
 # Optional: Set custom OpenAI endpoint
@@ -27,21 +54,32 @@ export OPENAI_MODEL="gpt-4"
 
 ## Usage
 
-### Interactive Mode
+### Using the Global Command (After Installation)
+
+Once installed, use `vibe` from any directory:
 
 ```bash
+# Interactive mode
+vibe
+
+# Single query mode
+vibe "List files in current directory"
+
+# With options
+vibe --help
+vibe --model gpt-4 --parallel-agents 5 "Analyze this project"
+```
+
+### Using Python Directly (Without Installation)
+
+```bash
+# Interactive mode
 python main.py
-```
 
-### Single Query Mode
-
-```bash
+# Single query mode
 python main.py "List files in current directory"
-```
 
-### Command-line Options
-
-```bash
+# Command-line options
 python main.py --help
 python main.py --model gpt-4 --parallel-agents 5
 ```
@@ -126,6 +164,28 @@ claude_code_python/
 - `PARALLEL_AGENTS`: Number of parallel agents (default: 1)
 
 ## Examples
+
+### Using the `vibe` Command
+
+```bash
+# Simple bash command
+vibe "Show current directory and list files"
+
+# Complex multi-step task with agents
+vibe "Analyze the Python files in this project and summarize the architecture"
+
+# Interactive mode - just type vibe!
+vibe
+> What files are in this directory?
+> Can you analyze the main.py file?
+> exit
+
+# From any directory
+cd /tmp
+vibe "Create a hello world Python script"
+```
+
+### Using Python Directly
 
 ```bash
 # Simple bash command

@@ -2,9 +2,9 @@
 """Basic tests for Claude Code Python."""
 import asyncio
 import os
-from tools.bash_tool import BashTool
-from services.agent_manager import load_all_agents, parse_frontmatter
-from utils.validation import validate_bash_command, truncate_output
+from .tools.bash_tool import BashTool
+from .services.agent_manager import load_all_agents, parse_frontmatter
+from .utils.validation import validate_bash_command, truncate_output
 
 
 async def test_bash_tool():
